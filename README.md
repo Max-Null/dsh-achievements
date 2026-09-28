@@ -1,14 +1,15 @@
 # dsh-achievements 路 SSiD 全家桶成就插件
 
-[DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness)（DSS）全局进度成就系统：监听 session / tool 事件，把工具调用、记忆/模板库工具、上下文审计、token 用量、GenUI 渲染等行为折成成就进度，解锁时 toast + 设置页「成就」面板（全景：含 GenUI 类别的融合视图）。
+[DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness)（DSH）全局进度成就系统：监听 session / tool 事件，把工具调用、记忆/模板库工具、上下文审计、token 用量、GenUI 渲染、消息收藏等行为折成成就进度，解锁时 toast + 设置页「成就」面板（全景：含 GenUI 类别的融合视图）。
 
 ## 特性
 
-- **18 个成就**、7 类别（启程 / 记忆 / 审计 / GenUI / 工具 / 行为 / 隐藏），稀有度覆盖 普通 → 传说；隐藏成就（如 夜猫子、自我指涉、亿万富翁）解锁前显示「？？」
+- **23 个成就**、8 类别（启程 / 记忆 / 审计 / GenUI / 收藏 / 工具 / 行为 / 隐藏），稀有度覆盖 普通 → 传说；隐藏成就（如 夜猫子、自我指涉、亿万富翁）解锁前显示「？？」
 - **分层面板**：工具名、事件类型、token 计数、当天时刻等叶级标量——**绝不读取消息正文、文件内容或错误详情**
 - **GenUI 融合**：client 读取 genui 插件自身的计数存储（`dsh.genui.achievements`），上报合并——全景页与 genui 成就页数据同源、互不重复计数
+- **收藏融合**：client 读 dsh-chat-rail 的 `/chat-rail/api/favorites`（只读计数）上报合并——host 侧 `setMax` 取绝对值，重复上报不虚增
 - **本地持久化**：`$DSH_HOME/achievements/state.json`，重启保留
-- **HTTP 通道**：`/achievements/api`（list / recent / clear / genui-merge），信任围栏同 dsh-memory 的 `/memory/api`
+- **HTTP 通道**：`/achievements/api`（list / recent / clear / genui-merge / chat-rail-merge），信任围栏同 dsh-memory 的 `/memory/api`
 - **模型工具**：`list_achievements`（只读进度查询）
 
 ## 截图
