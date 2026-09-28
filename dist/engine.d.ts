@@ -21,12 +21,24 @@ export declare class AchievementsEngine {
     private queue;
     /** 回合中间状态（agent key → 工具计数）。 */
     private turnTools;
+    /** 已计入 `sessions` 的会话 id，保证一个会话只记一次。 */
+    private countedSessions;
     get count(): AchieveState;
     recordTool(name: string): void;
     recordTurnStart(agentKey: string): void;
     recordTurnTool(agentKey: string): void;
     recordTurnEnd(agentKey: string): void;
     recordSession(): void;
+    /**
+     * 按会话 id 计一次会话。
+     *
+     * 为什么不用 `agent/session-start`：该事件在 DSH 0.1.7 已不存在（0.1.5 在
+     * `core/agent/src/runtime-types.ts`），cordis 对未知事件名静默——监听它不会报错，
+     * 只是永不触发，于是 `sessions` 恒为 0，`first-session` 永久不解锁。现在改由
+     * 会话的首个 `turn/start` 记账（见 `attachListeners` 的 `session/event` 分支）。
+     * @param sessionId - 会话 id；缺id 时不做去重，直接记一次。
+     */
+    recordSessionOnce(sessionId: string): void;
     recordTurn(): void;
     recordMidnight(): void;
     recordTokens(amount: number): void;

@@ -7,7 +7,7 @@ import { mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { ACHIEVEMENTS, checkUnlocks, emptyState, snapshot, viewOf } from '../src/rules.ts'
-import { AchievementsEngine } from '../src/engine.ts'
+import { AchievementsEngine, attachListeners } from '../src/engine.ts'
 
 function withHome(fn: (home: string) => void): void {
   const home = mkdtempSync(join(tmpdir(), 'achv-'))
@@ -171,6 +171,52 @@ describe('快照', () => {
       const favFirst = (snap.achievements as Array<Record<string, unknown>>).find(a => a.id === 'fav-first')!
       expect(favFirst.progress).toEqual({ current: 1, target: 1 }) // view 进度截断到 target
       expect(favFirst.unlocked).toBe(true)
+    })
+  })
+})
+
+describe('事件接线', () => {
+  /** 只实现 attachListeners 用到的 ctx.on，把监听器按事件名收好。 */
+  function fakeCtx() {
+    const handlers = new Map<string, (...args: unknown[]) => unknown>()
+    return {
+      ctx: {
+        on(name: string, fn: (...args: unknown[]) => unknown) { handlers.set(name, fn) },
+      } as never,
+      fire(name: string, ...args: unknown[]) { return handlers.get(name)?.(...args) },
+      has(name: string) { return handlers.has(name) },
+    }
+  }
+
+  it('会话计数走 session/event 的 turn/start，且同一会话只记一次', () => {
+    withHome(() => {
+      const engine = new AchievementsEngine()
+      const bus = fakeCtx()
+      attachListeners(bus.ctx, engine)
+
+      // 之前订阅的 agent/session-start 在 0.1.7 已不存在，接线里不该再有它
+      expect(bus.has('agent/session-start')).toBe(false)
+
+      bus.fire('session/event', { id: 's1' }, { type: 'turn/start' })
+      bus.fire('session/event', { id: 's1' }, { type: 'turn/start' })
+      bus.fire('session/event', { id: 's2' }, { type: 'turn/start' })
+      engine.flush()
+      expect(engine.count['sessions']).toBe(2)
+
+      // first-session 阈值 1，应已解锁
+      const snap = engine.fullSnapshot()
+      const row = (snap.achievements as Array<Record<string, unknown>>).find(a => a.id === 'first-session')!
+      expect(row.unlocked).toBe(true)
+    })
+  })
+
+  it('recordSessionOnce：无 id 时不去重，直接记一次', () => {
+    withHome(() => {
+      const engine = new AchievementsEngine()
+      engine.recordSessionOnce('')
+      engine.recordSessionOnce('')
+      engine.flush()
+      expect(engine.count['sessions']).toBe(2)
     })
   })
 })

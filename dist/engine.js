@@ -138,6 +138,8 @@ export class AchievementsEngine {
     queue = [];
     /** 回合中间状态（agent key → 工具计数）。 */
     turnTools = new Map();
+    /** 已计入 `sessions` 的会话 id，保证一个会话只记一次。 */
+    countedSessions = new Set();
     get count() { return this.store.count; }
     recordTool(name) {
         this.store.bump('tools');
@@ -166,6 +168,25 @@ export class AchievementsEngine {
         this.turnTools.delete(agentKey);
     }
     recordSession() { this.store.bump('sessions'); }
+    /**
+     * 按会话 id 计一次会话。
+     *
+     * 为什么不用 `agent/session-start`：该事件在 DSH 0.1.7 已不存在（0.1.5 在
+     * `core/agent/src/runtime-types.ts`），cordis 对未知事件名静默——监听它不会报错，
+     * 只是永不触发，于是 `sessions` 恒为 0，`first-session` 永久不解锁。现在改由
+     * 会话的首个 `turn/start` 记账（见 `attachListeners` 的 `session/event` 分支）。
+     * @param sessionId - 会话 id；缺id 时不做去重，直接记一次。
+     */
+    recordSessionOnce(sessionId) {
+        if (sessionId === '') {
+            this.recordSession();
+            return;
+        }
+        if (this.countedSessions.has(sessionId))
+            return;
+        this.countedSessions.add(sessionId);
+        this.recordSession();
+    }
     recordTurn() { this.store.bump('turns'); }
     recordMidnight() { this.store.bump('midnightTurns'); }
     recordTokens(amount) { if (amount > 0)
@@ -256,8 +277,15 @@ export function attachListeners(ctx, engine) {
             return;
         }
         if (event?.type === 'session/start') {
-            engine.recordSession();
-            engine.recordTurn();
+            // 该事件类型在 0.1.5 / 0.1.7 都不存在（Session 公共面没有它），此分支
+            // 从来没有触发过。保留会让人误以为会话计数有两条路径，删掉。
+            return;
+        }
+        if (event?.type === 'turn/start') {
+            // 会话记账落在首个 turn/start：这是 0.1.7 上确定到达的会话级信号，
+            // 且不像 `agent/created` 那样是可否决的 serial 监听（抛错会挡住 agent 创建）。
+            const id = typeof session?.id === 'string' ? session.id : '';
+            engine.recordSessionOnce(id);
             engine.flush();
         }
     }));
