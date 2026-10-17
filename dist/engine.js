@@ -297,13 +297,13 @@ function agentKeyOf(exec) {
 /** HTTP 路由（/achievements/api，POST）——仿 dsh-memory 的 /memory/api 信任围栏。 */
 export function registerRoutes(ctx, engine) {
     const webServer = ctx.webServer;
-    const webRuntime = ctx.webRuntime;
+    const webStartup = ctx.webStartup;
     ctx.effect(() => webServer.register({
         kind: 'prefix',
         path: '/achievements/api',
         handler: async (req, res) => {
             const request = req;
-            if (!isTrusted(request, webRuntime.trustedHosts)) {
+            if (!isTrusted(request, webStartup.trustedHosts)) {
                 writeJson(res, 403, { ok: false, error: { code: 'forbidden', message: 'forbidden' } });
                 return;
             }

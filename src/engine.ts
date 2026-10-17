@@ -319,14 +319,14 @@ export function registerRoutes(ctx: Context, engine: AchievementsEngine): void {
   const webServer = (ctx as unknown as {
     webServer: { register(descriptor: { kind: string, path: string, handler: (req: unknown, res: unknown) => Promise<void> | void }): () => void }
   }).webServer
-  const webRuntime = (ctx as unknown as { webRuntime: { trustedHosts: readonly string[] } }).webRuntime
+  const webStartup = (ctx as unknown as { webStartup: { trustedHosts: readonly string[] } }).webStartup
 
   ctx.effect(() => webServer.register({
     kind: 'prefix',
     path: '/achievements/api',
     handler: async (req: unknown, res: unknown) => {
       const request = req as { headers: Record<string, string | string[] | undefined>, method?: string, url?: string }
-      if (!isTrusted(request, webRuntime.trustedHosts)) {
+      if (!isTrusted(request, webStartup.trustedHosts)) {
         writeJson(res, 403, { ok: false, error: { code: 'forbidden', message: 'forbidden' } })
         return
       }

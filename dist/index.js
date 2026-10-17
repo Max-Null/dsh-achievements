@@ -1,6 +1,6 @@
 import { AchievementsEngine, attachListeners, registerRoutes, registerTool } from "./engine.js";
 export const name = '@max-null/dsh-achievements';
-export const inject = ['tools', 'webServer', 'webRuntime'];
+export const inject = ['tools', 'webServer', 'webStartup'];
 export function apply(ctx) {
     const engine = new AchievementsEngine();
     attachListeners(ctx, engine);

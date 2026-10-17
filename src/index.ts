@@ -11,7 +11,7 @@ import type { Context } from '@deepseek-ai/cordis'
 import { AchievementsEngine, attachListeners, registerRoutes, registerTool } from './engine.ts'
 
 export const name = '@max-null/dsh-achievements'
-export const inject = ['tools', 'webServer', 'webRuntime']
+export const inject = ['tools', 'webServer', 'webStartup']
 
 export function apply(ctx: Context): void {
   const engine = new AchievementsEngine()
