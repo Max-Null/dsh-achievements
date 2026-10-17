@@ -60,5 +60,9 @@
     "tsx": "^4.0.0",
     "typescript": "^5.5.0",
     "vitest": "^2.1.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Max-Null/dsh-achievements.git"
   }
 }
