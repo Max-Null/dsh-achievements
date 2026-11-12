@@ -102,50 +102,17 @@ var TROPHY_PATHS = [
   "M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22",
   "M18 2H6v7a6 6 0 0 0 12 0V2Z"
 ];
-var SETTINGS_NAV_MARKER = "data-dsh-achievements-settings-nav";
-var TROPHY_MASK_SVG = encodeURIComponent(
-  `<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'>${TROPHY_PATHS.map((d) => `<path d='${d}'/>`).join("")}</svg>`
-).replace(/'/g, "%27").replace(/\//g, "%2F").replace(/\(/g, "%28").replace(/\)/g, "%29").replace(/#/g, "%23");
-var NAV_ICON_CSS = `
-[data-dsh-achievements-settings-nav] > svg:first-child { display: none; }
-[data-dsh-achievements-settings-nav]::before {
-  content: '';
-  flex: none;
-  width: 16px;
-  height: 16px;
-  background: currentColor;
-  -webkit-mask: url("data:image/svg+xml,${TROPHY_MASK_SVG}") center / contain no-repeat;
-  mask: url("data:image/svg+xml,${TROPHY_MASK_SVG}") center / contain no-repeat;
-}
-`;
-var navCssInjected = false;
-function injectNavCss() {
-  if (navCssInjected || typeof document === "undefined") return;
-  navCssInjected = true;
-  const style = document.createElement("style");
-  style.setAttribute("data-plugin", "@max-null/dsh-achievements");
-  style.textContent = NAV_ICON_CSS;
-  document.head.append(style);
-}
-function registerSettingsNavIcon(label) {
-  let disposed = false;
-  const sync = () => {
-    if (disposed) return;
-    const currentLabel = label().trim();
-    const buttons = document.querySelectorAll('[role="dialog"] nav button');
-    for (const button of buttons) {
-      const matches = currentLabel.length > 0 && button.textContent?.trim() === currentLabel;
-      if (matches) button.setAttribute(SETTINGS_NAV_MARKER, "");
-      else button.removeAttribute(SETTINGS_NAV_MARKER);
-    }
-  };
-  sync();
-  const observer = new MutationObserver(sync);
-  observer.observe(document.body, { subtree: true, childList: true, characterData: true });
-  return () => {
-    disposed = true;
-    observer.disconnect();
-  };
+function NavIcon({ size }) {
+  return (0, import_react.createElement)("svg", {
+    width: size,
+    height: size,
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: 2,
+    strokeLinecap: "round",
+    strokeLinejoin: "round"
+  }, TROPHY_PATHS.map((d, index) => (0, import_react.createElement)("path", { key: index, d })));
 }
 var GENUI_LS_KEY = "dsh.genui.achievements";
 function readGenUI() {
@@ -314,8 +281,12 @@ function apply(ctx) {
     label: () => STRINGS[lang()].title
   }, () => (0, import_react.createElement)(AchievementsView, { visible: true })));
   disposers.push(mountToastLayer());
-  injectNavCss();
-  disposers.push(registerSettingsNavIcon(() => STRINGS[lang()].title));
+  ctx.slots.inject("settings.section.icon", () => ctx.slots.register({
+    name: "settings.section.icon",
+    id: "ssid-achievements",
+    order: 90,
+    label: () => STRINGS[lang()].title
+  }, (props) => NavIcon({ size: props?.size ?? 16 })));
   return () => {
     for (const dispose of disposers) dispose();
   };
